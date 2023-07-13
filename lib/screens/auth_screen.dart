@@ -1,4 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+
+final _firebase = FirebaseAuth.instance;
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -17,13 +20,27 @@ class _AuthScreenState extends State<AuthScreen> {
 
   var _isLoginMode = true;
 
-  void _submit() {
+  void _submit() async {
     final isValid = _formKey.currentState!.validate();
 
-    if (isValid) {
-      _formKey.currentState!.save();
-      print(_enteredPassword);
-      print(_enteredEmail);
+    if (!isValid) {
+      return;
+    }
+
+    _formKey.currentState!.save();
+    try {
+      if (_isLoginMode) {
+        final userCredentials = await _firebase.signInWithEmailAndPassword(
+            email: _enteredEmail, password: _enteredPassword);
+      } else {
+        final userCredentials = await _firebase.createUserWithEmailAndPassword(
+            email: _enteredEmail, password: _enteredPassword);
+      }
+    } on FirebaseAuthException catch (error) {
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(error.message ?? "Authentication Failed"),
+      ));
     }
   }
 
@@ -58,13 +75,14 @@ class _AuthScreenState extends State<AuthScreen> {
                         children: [
                           TextFormField(
                             decoration: const InputDecoration(
-                              labelText: "Email Address"
-                            ),
+                                labelText: "Email Address"),
                             keyboardType: TextInputType.emailAddress,
                             autocorrect: false,
                             textCapitalization: TextCapitalization.none,
                             validator: (value) {
-                              if (value == null || value.trim().isEmpty || !value.contains("@")) {
+                              if (value == null ||
+                                  value.trim().isEmpty ||
+                                  !value.contains("@")) {
                                 return "Please Enter A Valid Email Address";
                               }
                               return null;
@@ -74,12 +92,13 @@ class _AuthScreenState extends State<AuthScreen> {
                             },
                           ),
                           TextFormField(
-                            decoration: const InputDecoration(
-                                labelText: "Password"
-                            ),
+                            decoration:
+                                const InputDecoration(labelText: "Password"),
                             obscureText: true,
                             validator: (value) {
-                              if (value == null || value.trim().isEmpty || value.trim().length < 6) {
+                              if (value == null ||
+                                  value.trim().isEmpty ||
+                                  value.trim().length < 6) {
                                 return "Password Must Be At Least 6 Characters";
                               }
                               return null;
@@ -94,8 +113,9 @@ class _AuthScreenState extends State<AuthScreen> {
                           ElevatedButton(
                               onPressed: _submit,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Theme.of(context).colorScheme.primaryContainer
-                              ),
+                                  backgroundColor: Theme.of(context)
+                                      .colorScheme
+                                      .primaryContainer),
                               child: Text(_isLoginMode ? "Login" : "Sign Up")),
                           TextButton(
                               onPressed: () {
@@ -103,7 +123,9 @@ class _AuthScreenState extends State<AuthScreen> {
                                   _isLoginMode = !_isLoginMode;
                                 });
                               },
-                              child: Text(_isLoginMode ? "Create An Account" : "I Already Have An Account")),
+                              child: Text(_isLoginMode
+                                  ? "Create An Account"
+                                  : "I Already Have An Account")),
                         ],
                       ),
                     ),
