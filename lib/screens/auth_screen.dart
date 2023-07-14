@@ -22,6 +22,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
   var _enteredEmail = "";
   var _enteredPassword = "";
+  var _enteredUsername = "";
   var _isLoginMode = true;
   File? _selectedImage;
   var _isAuthenticating = false;
@@ -51,7 +52,7 @@ class _AuthScreenState extends State<AuthScreen> {
         await storageRef.putFile(_selectedImage!);
         final imageUrl = await storageRef.getDownloadURL();
         await FirebaseFirestore.instance.collection("users").doc(userCredentials.user!.uid).set({
-          "username": "tbd",
+          "username": _enteredUsername,
           "email": userCredentials.user!.email,
           "image_url": imageUrl
         });
@@ -118,6 +119,22 @@ class _AuthScreenState extends State<AuthScreen> {
                             },
                             onSaved: (value) {
                               _enteredEmail = value!;
+                            },
+                          ),
+                          if (!_isLoginMode)
+                          TextFormField(
+                            validator: (value) {
+                              if (value == null || value.isEmpty || value.trim().length < 4) {
+                                return "Please Enter Valid Username That Is At Least 4 Characters";
+                              }
+                              return null;
+                            },
+                            decoration: const InputDecoration(
+                              labelText: "Username"
+                            ),
+                            enableSuggestions: false,
+                            onSaved: (value) {
+                              _enteredUsername = value!;
                             },
                           ),
                           TextFormField(
